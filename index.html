@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>⚔️ 隊伍召集：像素隨機分組器</title>
+  <!-- 網站標籤小圖示 -->
+  <link rel="icon" href="assets/icon.png" type="image/png">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Noto+Sans+TC:wght@500;700;900&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg: #120e24;
+      --panel-bg: #1e1738;
+      --panel-inner: #0f0b1d;
+      --pixel-gold: #ffcc00;
+      --pixel-cyan: #38bdf8;
+      --pixel-green: #22c55e;
+      --pixel-amber: #f59e0b;
+      --border-outer: #000000;
+      --border-inner: #4a3b7a;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Press Start 2P', 'Noto Sans TC', sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      background-image: 
+        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 20px 20px;
+      color: #f8fafc;
+      display: flex;
+      justify-content: center;
+      padding: 2.5rem 1rem;
+      min-height: 100vh;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 660px;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .header {
+      text-align: center;
+    }
+
+    .header h1 {
+      font-size: 1.25rem;
+      color: var(--pixel-gold);
+      text-shadow: 3px 3px 0px #000;
+      margin-bottom: 0.75rem;
+      line-height: 1.6;
+    }
+
+    .header p {
+      font-size: 0.65rem;
+      color: var(--pixel-cyan);
+      text-shadow: 2px 2px 0px #000;
+    }
+
+    .pixel-panel {
+      background: var(--panel-bg);
+      border: 4px solid var(--border-outer);
+      box-shadow: 
+        inset 0 0 0 4px var(--border-inner),
+        6px 6px 0px #000000;
+      padding: 1.5rem;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+      margin-bottom: 1.25rem;
+    }
+
+    label {
+      font-size: 0.65rem;
+      color: var(--pixel-gold);
+      text-shadow: 1px 1px 0px #000;
+    }
+
+    textarea, input, select {
+      background: var(--panel-inner);
+      border: 3px solid var(--border-inner);
+      color: #fff;
+      padding: 0.75rem;
+      font-size: 0.8rem;
+      outline: none;
+      box-shadow: inset 2px 2px 0px #000;
+    }
+
+    textarea:focus, input:focus, select:focus {
+      border-color: var(--pixel-gold);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 100px;
+      line-height: 1.6;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 0.5rem;
+    }
+
+    .arcade-btn {
+      flex: 1;
+      padding: 1rem 0.5rem;
+      font-size: 0.75rem;
+      cursor: pointer;
+      border: 3px solid #000;
+      outline: none;
+      font-weight: bold;
+      transition: all 0.08s ease-in-out;
+      text-shadow: 1px 1px 0px #000;
+    }
+
+    .btn-primary {
+      background: var(--pixel-green);
+      color: #052e16;
+      box-shadow: 0 5px 0 #15803d, 0 8px 0 #000;
+    }
+
+    .btn-primary:active {
+      transform: translateY(5px);
+      box-shadow: 0 0 0 #15803d, 0 3px 0 #000;
+    }
+
+    .btn-reroll {
+      background: var(--pixel-amber);
+      color: #451a03;
+      box-shadow: 0 5px 0 #b45309, 0 8px 0 #000;
+    }
+
+    .btn-reroll:active {
+      transform: translateY(5px);
+      box-shadow: 0 0 0 #b45309, 0 3px 0 #000;
+    }
+
+    .error-box {
+      background: rgba(239, 68, 68, 0.2);
+      border: 3px solid #ef4444;
+      color: #fca5a5;
+      padding: 0.75rem;
+      font-size: 0.65rem;
+      line-height: 1.5;
+      display: none;
+      margin-bottom: 1rem;
+      box-shadow: 3px 3px 0px #000;
+    }
+
+    .results-container {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .party-row {
+      display: flex;
+      align-items: center;
+      background: var(--panel-inner);
+      border: 3px solid var(--border-inner);
+      padding: 0.75rem 1rem;
+      gap: 0.85rem;
+      box-shadow: 3px 3px 0px #000;
+    }
+
+    .party-tag {
+      background: #312e81;
+      color: var(--pixel-cyan);
+      border: 2px solid var(--pixel-cyan);
+      padding: 0.35rem 0.5rem;
+      font-size: 0.65rem;
+      white-space: nowrap;
+    }
+
+    .party-members {
+      flex: 1;
+      font-size: 0.7rem;
+      color: #f1f5f9;
+      line-height: 1.5;
+    }
+
+    .party-count {
+      font-size: 0.55rem;
+      color: var(--pixel-gold);
+      white-space: nowrap;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="header">
+      <h1>⚔️ PARTY BUILDER ⚔️</h1>
+      <p>ROUND-ROBIN DEALING SYSTEM</p>
+    </div>
+
+    <div class="pixel-panel">
+      <div id="error-message" class="error-box"></div>
+
+      <div class="form-group">
+        <label for="raw-names">▶ 冒險者名冊 (換行/逗號/空格隔開)</label>
+        <textarea id="raw-names" placeholder="例如：勇者, 魔法師, 盜賊, 僧侶, 弓箭手, 勇者..."></textarea>
+      </div>
+
+      <div class="row">
+        <div class="form-group">
+          <label for="group-mode">▶ 分隊模式</label>
+          <select id="group-mode">
+            <option value="BY_COUNT">指定隊伍組數</option>
+            <option value="BY_SIZE">每隊人數上限</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="target-val" id="target-label">▶ 目標組數</label>
+          <input type="number" id="target-val" min="1" value="2">
+        </div>
+      </div>
+
+      <div class="btn-group">
+        <!-- 初始顯示組隊開始按鈕 -->
+        <button id="btn-run" class="arcade-btn btn-primary">⚔️ 組隊開始</button>
+        <!-- 組隊完成後只留下這個按鈕 -->
+        <button id="btn-reroll" class="arcade-btn btn-reroll" style="display: none;">🎲 重新分組</button>
+      </div>
+    </div>
+
+    <div id="result-card" class="pixel-panel" style="display: none;">
+      <label style="margin-bottom: 1rem; display: block;">🏆 冒險小隊名單</label>
+      <div id="groups-wrapper" class="results-container"></div>
+    </div>
+  </div>
+
+  <script>
+    const sfxCoin = new Audio('assets/coin.wav');
+    const sfxVictory = new Audio('assets/victory.wav');
+
+    const heroIcons = ['⚔️', '🪄', '🏹', '🛡️', '🗡️', '📜', '🪓', '✨'];
+
+    function playSound(audio) {
+      if (audio) {
+        audio.currentTime = 0;
+        audio.play().catch(() => {});
+      }
+    }
+
+    function cleanAndDeduplicate(rawText) {
+      const items = rawText
+        .split(/[\n,，\s]+/)
+        .map(s => s.trim())
+        .filter(s => s.length > 0);
+
+      const countMap = {};
+      items.forEach(name => {
+        countMap[name] = (countMap[name] || 0) + 1;
+      });
+
+      const currentIdxMap = {};
+      return items.map(name => {
+        if (countMap[name] > 1) {
+          currentIdxMap[name] = (currentIdxMap[name] || 0) + 1;
+          return `${name} (${currentIdxMap[name]})`;
+        }
+        return name;
+      });
+    }
+
+    function shuffle(array) {
+      const copy = [...array];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    function divideGroups(members, mode, targetValue) {
+      const total = members.length;
+      if (total === 0) throw new Error("⚠️ 警告：名冊內尚無任何成員！");
+      if (targetValue <= 0 || isNaN(targetValue)) throw new Error("⚠️ 警告：指定數值必須大於 0！");
+
+      let groupCount = 0;
+      if (mode === "BY_COUNT") {
+        if (targetValue > total) {
+          throw new Error(`⚠️ 警告：隊伍組數 (${targetValue}) 不能大於總人數 (${total})！`);
+        }
+        groupCount = targetValue;
+      } else {
+        groupCount = Math.ceil(total / targetValue);
+      }
+
+      const shuffled = shuffle(members);
+      const groups = Array.from({ length: groupCount }, () => []);
+
+      for (let i = 0; i < total; i++) {
+        groups[i % groupCount].push(shuffled[i]);
+      }
+
+      return groups;
+    }
+
+    const rawNamesEl = document.getElementById("raw-names");
+    const groupModeEl = document.getElementById("group-mode");
+    const targetValEl = document.getElementById("target-val");
+    const targetLabelEl = document.getElementById("target-label");
+    const btnRun = document.getElementById("btn-run");
+    const btnReroll = document.getElementById("btn-reroll");
+    const errorBox = document.getElementById("error-message");
+    const resultCard = document.getElementById("result-card");
+    const groupsWrapper = document.getElementById("groups-wrapper");
+
+    // 切換模式標籤
+    groupModeEl.addEventListener("change", () => {
+      targetLabelEl.textContent = groupModeEl.value === "BY_COUNT" ? "▶ 目標組數" : "▶ 每隊人數";
+      resetButtons();
+    });
+
+    // 當使用者修改名冊內容或數值時，恢復「組隊開始」按鈕
+    rawNamesEl.addEventListener("input", resetButtons);
+    targetValEl.addEventListener("input", resetButtons);
+
+    function resetButtons() {
+      btnRun.style.display = "block";
+      btnReroll.style.display = "none";
+    }
+
+    function showError(msg) {
+      errorBox.textContent = msg;
+      errorBox.style.display = "block";
+      resultCard.style.display = "none";
+    }
+
+    function clearError() {
+      errorBox.style.display = "none";
+    }
+
+    function renderGroups(groups) {
+      groupsWrapper.innerHTML = "";
+      groups.forEach((group, idx) => {
+        const row = document.createElement("div");
+        row.className = "party-row";
+
+        const tag = document.createElement("span");
+        tag.className = "party-tag";
+        tag.textContent = `PARTY ${String(idx + 1).padStart(2, '0')}`;
+
+        const membersWithIcons = group.map(m => {
+          const randomIcon = heroIcons[Math.floor(Math.random() * heroIcons.length)];
+          return `${randomIcon} ${m}`;
+        });
+
+        const members = document.createElement("span");
+        members.className = "party-members";
+        members.textContent = membersWithIcons.join(", ");
+
+        const count = document.createElement("span");
+        count.className = "party-count";
+        count.textContent = `[${group.length} 人]`;
+
+        row.appendChild(tag);
+        row.appendChild(members);
+        row.appendChild(count);
+        groupsWrapper.appendChild(row);
+      });
+      resultCard.style.display = "block";
+      
+      // 關鍵修改：隱藏「組隊開始」，只顯示「重新分組」按鈕
+      btnRun.style.display = "none";
+      btnReroll.style.display = "block";
+    }
+
+    function executeGrouping() {
+      clearError();
+      playSound(sfxCoin);
+      try {
+        const members = cleanAndDeduplicate(rawNamesEl.value);
+        const mode = groupModeEl.value;
+        const targetVal = parseInt(targetValEl.value, 10);
+
+        const groups = divideGroups(members, mode, targetVal);
+        renderGroups(groups);
+        
+        setTimeout(() => {
+          playSound(sfxVictory);
+        }, 150);
+      } catch (err) {
+        showError(err.message);
+      }
+    }
+
+    btnRun.addEventListener("click", executeGrouping);
+    btnReroll.addEventListener("click", executeGrouping);
+  </script>
+</body>
+</html>
